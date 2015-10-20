@@ -15,30 +15,28 @@ $spps.Load($listcts)
 $spps.ExecuteQuery()
 
 }
-
-
+function Show-ListContentTypes
+{
+Get-ListContentTypes
+$listcts | Select Name,ID
+#Plan in here to sort out foreach about all CT's and get the fields for each CT
+}
 function Enable-ListContentTypes
 {
 $list.ContentTypesEnabled = $True
 $list.Update()
 $spps.ExecuteQuery()
 }
-
-
 function Disable-ListContentTypes
 {
 $list.ContentTypesEnabled = $False
 $list.Update()
 $spps.ExecuteQuery()
 }
-
-
 Function Get-ListContentTypeEnabled
 {
 $list.ContentTypesEnabled
 }
-
-
 function Get-ContentTypes
 {
 $Global:contenttypes = $web.ContentTypes
@@ -50,12 +48,7 @@ Write-host "Variable created" -ForegroundColor Green -NoNewline
 Write-host "  CTnIDs  " -ForegroundColor Red -NoNewline
 Write-host "which contains the Content Type Names and ID's for the Current Web" -ForegroundColor Green -NoNewline
 }
-
-
 # Create Content Type or Adding Content Type Functions
-
-
-
 Function New-ContentType
 {
 [CmdletBinding()]
@@ -99,10 +92,6 @@ $spps.load($ctreturn)
 $spps.ExecuteQuery()
 Write-Host "Content Type "$name" Created"
 }
-
-
-
-
 function Add-ContentTypeToList
 {
 
@@ -118,7 +107,7 @@ function Add-ContentTypeToList
 
 Get-List $listTitle
 
-if((Return-ListContentTypeEnabled) -eq $False)
+if((Get-ListContentTypeEnabled) -eq $False)
     {
     Enable-ListContentTypes
     Write-host "Content Types Now Enabled on"$ListTitle" List/Library" -ForegroundColor Green
@@ -135,9 +124,10 @@ $spps.Load($cts)
 $ctReturn = $cts.AddExistingContentType($ct)
 $spps.Load($ctReturn)
 $spps.ExecuteQuery()
-Write-host "Content Type"$ct.Name"Added to"$list.Title"" -ForegroundColor Green
+Write-host "Content Type" -ForegroundColor Green -NoNewline
+Write-host " $ctname " -ForegroundColor Red -NoNewline
+Write-host "Added to $listTitle" -ForegroundColor Green -NoNewline
 }
-
 Function New-ContentTypesFromCSV
 {
 [CmdletBinding()]
@@ -154,17 +144,7 @@ New-ContentType -Name $Row.Name -Description $row.Description -Group $Row.Group 
 }
 
 }
-
-
-
-
-
-
-
-
 #    Remove Content Types Functions
-
-
 Function Remove-ContentTypeFromList
 {
 [CmdletBinding()]
@@ -186,9 +166,6 @@ $ctToRemove.DeleteObject()
 $spps.ExecuteQuery()
 Write-host "Content Type"$ctToRemove.Name"Removed From"$list.Title"" -ForegroundColor Green
 }
-
-
-
 function Remove-ContentTypeFromSite
 {
     [CmdletBinding()]
@@ -207,11 +184,6 @@ $contentypetodelete.deleteObject()
 $spps.ExecuteQuery()
 Write-Host "Content Type"$name" Removed From Site" -ForegroundColor Green
 }
-
-
-
-
-
 function Remove-ContentTypeFromCSV
 {
 [CmdletBinding()]
