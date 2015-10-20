@@ -1,19 +1,9 @@
-﻿<#
-        .SYNOPSIS
-		Created by: Ryan Yates
-		Created: 22/01/2015
-		
-
-	.DESCRIPTION
-		Site Column Functions
-#>
+﻿#----------------------------------------------------------------------------- 
+# Filename : spps.lists.ps1 
 #----------------------------------------------------------------------------- 
-# Filename : spps.sitecolumns.ps1 
+# Original Author : Ryan Yates @ryanyates1990
 #----------------------------------------------------------------------------- 
-#----------------------------------------------------------------------------- 
-# SPPS Site Column Functions
-#----------------------------------------------------------------------------- 
-
+# A collection of functions for attaining Site Columns
 
 Function Get-SiteColumns
 {
@@ -49,7 +39,7 @@ function Add-LookupSiteColumn
 	)
 	
 
-    $newSiteColumn = "<Field DisplayName='$fieldname' Type='Lookup' Required='TRUE' List='$lookuplistid' WebId='$LookupWebid' Name='LookupField' ShowField='$LookupField' Group='$SiteColumnGroup'  />"
+    $newSiteColumn = "<Field DisplayName='$fieldname' Type='Lookup' Required='TRUE' List='$lookuplistid' WebId='$LookupWebid' Name='$fieldname' ShowField='$LookupField' Group='$SiteColumnGroup'  />"
     Add-SiteColumn $fieldName $NewSiteColumn  
 }
 
@@ -355,35 +345,6 @@ function Remove-SiteColumn
     }
 }
 
-function Remove-Subsite
-{
-[CmdletBinding()]
-	param
-	(
-		[Parameter(Mandatory=$true, Position=1)]
-	    [string]$Subsiteurl
-)
-if($Subsiteurl)
-{
-    Try
-        {
-        $ctx = New-Object Microsoft.SharePoint.Client.ClientContext($subsiteurl)
-        $Removalweb = $ctx.Web  
- 
-        $ctx.Load($removalweb)  
-        $ctx.ExecuteQuery() 
- 
-        $removalweb.DeleteObject() 
-        $ctx.ExecuteQuery()
-        Write-Host "Subsite $SubsiteUrl succesfully deleted" -foregroundcolor black -backgroundcolor green
-        }
-    catch
-    {
-    Write-Host "Subsite $SubsiteUrl Didnt Exist Or is Not a Subsite" -foregroundcolor Yellow -backgroundcolor Red
-    }
-}
-}
-
 
 function Add-SiteColumnToContentType
 {
@@ -398,8 +359,8 @@ function Add-SiteColumnToContentType
 
 	)
 
-Load-SiteColumns
-Load-ContentTypes
+Get-SiteColumns
+Get-ContentTypes
 $field = $fields.GetByInternalNameOrTitle($SiteColumnName)
 $SPPS.Load($field)
 $ctName = $CTnIDs.GetEnumerator() | Where-Object {$_.Name -eq $ContentTypeToAddTo}
@@ -413,12 +374,77 @@ $CT.Update($true);
 try
 {
 $Spps.ExecuteQuery()
-Write-host "Site Column "$SiteColumnName" Added to "$ContentTypeToAddTo"" -ForegroundColor Green
+Write-Verbose "Site Column "$SiteColumnName" Added to "$ContentTypeToAddTo""
 }
 catch
 {
-Write-host "Site Column "$SiteColumnName" Could not be Added to "$ContentTypeToAddTo"" -ForegroundColor Red
-Write-Host "Check that Site Column is Correct and Content Type to Add to Is Correct" -ForegroundColor DarkYellow
+Write-Verbose "Site Column "$SiteColumnName" Could not be Added to "$ContentTypeToAddTo"" 
+Write-Verbose "Check that Site Column is Correct and Content Type to Add to Is Correct" 
 }
 
+}
+
+function Add-BulkSiteColumns
+{
+<#
+.Synopsis
+   This function will Check in a file 
+    
+.DESCRIPTION
+   This can be used to check in a file in a library that requires files to be checked in before beinf published
+.EXAMPLE
+   Clear-ListContent -ListTitle Tasks
+   Will get the object for the SharePoint List called Tasks and then delete this from the Site 
+.NOTES
+   Requires there to have a connection to a SharePoint Site using the Initialize-SPPS function 
+#>
+[CmdletBinding()]
+	param
+	(
+	    [Parameter(Mandatory=$true, Position=1)]
+	    [string]$ListTitle,
+		
+        [Parameter(Mandatory=$false,HelpMessage="Csv File Location", Position=2)]
+	    $CSVFile 
+    )
+$csv = import-csv $CSVFile
+foreach($row in $csv)
+{
+if($row.type -eq "Choice")
+{
+Add-ChoiceSiteColumn -listTitle $list.Title -fieldName $Row.Name -values $row.Choicevalues -ChoiceType $row.ChoiceType
+}
+if($row.type -eq "Text")
+{
+Add-textFieldtoList -listTitle $list.Title -fieldName $row.Name -MaxNumberofChars $row.TextMaxChars
+}
+if($row.type -eq "Note")
+{
+Add-NoteFieldtoList -listTitle $list.Title -fieldName $row.Name -NumberOfLines $row.NoteLines -TextType $row.NoteType
+}
+if($row.type -eq "User")
+{
+Add-UserFieldtoList -listTitle $list.title -fieldName $row.Name -Usertype $row.UserType -UserSelectionScope $row.UserSelectionScope -UserSelectionMode $row.UserSelectionMode
+}
+if($row.type -eq "Calculated")
+{
+Add-CalculatedFieldtoList -listTitle $list.Title -fieldName $row.name -value $row.CalcValue
+}
+if($row.type -eq "DateTime")
+{
+Add-DateTimeFieldtoList -listTitle $list.title -fieldName $row.Name
+}
+if ($row.type -eq "Currency")
+{
+Add-CurrencyFieldtoList -listTitle $list.Title -fieldName $row.name 
+}
+if ($row.type -eq "Number")
+{
+Add-NumberFieldtoList -listTitle $list.Title -fieldName $row.name
+}
+if ($row.type -eq "Boolean")
+{
+Add-BooleanFieldtoList -listTitle $list.Title -fieldName $row.name 
+}
+}
 }
